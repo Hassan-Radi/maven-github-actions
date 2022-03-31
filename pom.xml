@@ -1,16 +1,251 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.applause</groupId>
-  <artifactId>maven-github-actions</artifactId>
-  <version>1.0.0</version>
+    <groupId>com.applause</groupId>
+    <artifactId>maven-github-actions</artifactId>
+    <version>1.0.0</version>
 
-  <properties>
-    <maven.compiler.source>15</maven.compiler.source>
-    <maven.compiler.target>15</maven.compiler.target>
-  </properties>
+    <scm>
+        <!-- TODO: update this -->
+        <developerConnection>scm:git:https://github.com/Hassan-Radi/maven-github-actions.git</developerConnection>
+    </scm>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+
+        <!-- source lib versions -->
+
+        <!-- tests-only lib versions -->
+        <junit-jupiter.version>5.8.2</junit-jupiter.version>
+
+        <!-- build plugin versions -->
+        <spotless-maven-plugin.version>2.21.0</spotless-maven-plugin.version>
+        <google-java-format.version>1.15.0</google-java-format.version>
+        <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
+        <checkstyle.version>10.0</checkstyle.version>
+        <maven-pmd-plugin.version>3.15.0</maven-pmd-plugin.version>
+        <pmd.version>6.43.0</pmd.version>
+        <spotbugs-maven-plugin.version>4.5.3.0</spotbugs-maven-plugin.version>
+        <findsecbugs-plugin.version>1.11.0</findsecbugs-plugin.version>
+        <spotbugs.version>4.6.0</spotbugs.version>
+        <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
+        <error_prone_core.version>2.11.0</error_prone_core.version>
+        <nullaway.version>0.9.6</nullaway.version>
+        <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit-jupiter.version}</version>
+            <!-- only needed for tests -->
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+            <version>${spotbugs.version}</version>
+            <!-- only needed at build time -->
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>${spotless-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>apply</goal>
+                        </goals>
+                        <phase>validate</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <formats>
+                    </formats>
+                    <java>
+                        <googleJavaFormat>
+                            <version>${google-java-format.version}</version>
+                        </googleJavaFormat>
+                    </java>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${maven-checkstyle-plugin.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>${checkstyle.version}</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <propertyExpansion>config_loc=${maven.multiModuleProjectDirectory}
+                    </propertyExpansion>
+                    <configLocation>${maven.multiModuleProjectDirectory}/checkstyle.xml
+                    </configLocation>
+                    <suppressionsLocation>
+                        ${maven.multiModuleProjectDirectory}/checkstyle_suppressions.xml
+                    </suppressionsLocation>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>checkstyle</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <failOnViolation>true</failOnViolation>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>${maven-pmd-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <!-- move this after default "validate" phase so Spotless formatter runs first (so unused imports don't trigger violations)-->
+                        <phase>initialize</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <rulesets>
+                        <ruleset>/rulesets/java/maven-pmd-plugin-default.xml</ruleset>
+                        <ruleset>file://${maven.multiModuleProjectDirectory}/pmd_ruleset.xml</ruleset>
+                    </rulesets>
+                    <analysisCache>true</analysisCache>
+                    <printFailingErrors>true</printFailingErrors>
+                    <analysisCacheLocation>${project.basedir}/pmd/pmd.cache</analysisCacheLocation>
+                    <excludeRoots>
+                        <excludeRoot>target/generated-sources</excludeRoot>
+                    </excludeRoots>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>net.sourceforge.pmd</groupId>
+                        <artifactId>pmd-core</artifactId>
+                        <version>${pmd.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>net.sourceforge.pmd</groupId>
+                        <artifactId>pmd-java</artifactId>
+                        <version>${pmd.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${spotbugs-maven-plugin.version}</version>
+                <configuration>
+                    <onlyAnalyze>com.applause.-</onlyAnalyze>
+                    <failOnError>true</failOnError>
+                    <plugins>
+                        <plugin>
+                            <groupId>com.h3xstream.findsecbugs</groupId>
+                            <artifactId>findsecbugs-plugin</artifactId>
+                            <version>${findsecbugs-plugin.version}</version>
+                        </plugin>
+                    </plugins>
+                    <excludeFilterFile>
+                        ${maven.multiModuleProjectDirectory}/spotbugs-exclude.xml
+                    </excludeFilterFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <!-- run after compile, before tests-->
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <!-- overwrite dependency on spotbugs if you want to specify the version of spotbugs -->
+                    <dependency>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs</artifactId>
+                        <version>${spotbugs.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <release>17</release>
+                    <encoding>UTF-8</encoding>
+                    <!-- fork is needed for ErrorProne linter -->
+                    <fork>true</fork>
+                    <showWarnings>true</showWarnings>
+                    <compilerArgs>
+                        <!-- ErrorProne args here -->
+                        <arg>-XDcompilePolicy=simple</arg>
+                        <!-- SameNameButDifferent rule bugged as of ErrorProne 2.10.0 for Java 17 see https://github.com/google/error-prone/issues/2273 -->
+                        <!-- also, NullAway linter is configured here  https://github.com/uber/NullAway/wiki/Configuration#maven -->
+                        <arg>-Xplugin:ErrorProne -Xep:SameNameButDifferent:OFF -Xep:MissingSummary:OFF  -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=com.applause -XepOpt:NullAway:CheckOptionalEmptiness=true  -XepOpt:NullAway:AcknowledgeRestrictiveAnnotations=true -XepOpt:NullAway:CheckOptionalEmptinessCustomClasses=com.google.common.base.Optional -XepOpt:NullAway:HandleTestAssertionLibraries=true  -XepExcludedPaths:.*/target/generated-sources/.*
+                        </arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
+                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+                        <!-- End ErrorProne args -->
+
+                        <arg>-Xlint:all,-processing,-serial</arg>
+                        <arg>-implicit:class</arg>
+                        <!--tell Java to preserve parameter names in compiled classes. Improves error msgs -->
+                        <arg>-parameters</arg>
+                        <arg>-Werror</arg>
+                    </compilerArgs>
+                    <annotationProcessorPaths>
+                        <!-- ErrorProne processor -->
+                        <path>
+                            <groupId>com.google.errorprone</groupId>
+                            <artifactId>error_prone_core</artifactId>
+                            <version>${error_prone_core.version}</version>
+                        </path>
+                        <!-- NullAway ErrorProne processor plugin-->
+                        <path>
+                            <groupId>com.uber.nullaway</groupId>
+                            <artifactId>nullaway</artifactId>
+                            <version>${nullaway.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+                <configuration>
+                    <parallel>all</parallel>
+                    <useUnlimitedThreads>true</useUnlimitedThreads>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
